@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-random {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-random:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-random:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-stream {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-stream:hover:not(:disabled) {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+
+        .btn-stream:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results {
+            margin-top: 40px;
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .stream-container {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .stream-event {
+            padding: 8px 0;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .stream-event:last-child {
+            border-bottom: none;
+        }
+
+        .stream-event.done {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .stream-event.error {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .response-container {
+            background: #fff9e6;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .response-header h3 {
+            color: #333;
+        }
+
+        .response-meta {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .response-text {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 4px;
+            color: #c62828;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 OpenClaw Agent</h1>
+            <p>Взаимодействие с Claude через HTTP/2 + TLS</p>
+        </div>
+
+        <div class="content">
+            <div class="form-group">
+                <label for="task">Задача</label>
+                <textarea id="task" placeholder="Введите задачу для выполнения..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="system_prompt">Системный промпт</label>
+                <input type="text" id="system_prompt" placeholder="You are a senior software engineer" value="You are a senior software engineer">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-submit" onclick="submitTask()">Отправить задачу</button>
+                <button class="btn-random" onclick="submitRandomTask()">Случайная задача</button>
+                <button class="btn-stream" onclick="viewStream()">Просмотр потока</button>
+            </div>
+
+            <div class="results" id="results">
+                <div id="error-container"></div>
+
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Обработка запроса...</span>
+                </div>
+
+                <div id="stream-section" style="display: none;">
+                    <h3>Поток событий</h3>
+                    <div class="stream-container" id="streamContainer"></div>
+                </div>
+
+                <div id="response-section" style="display: none;">
+                    <div class="response-container">
+                        <div class="response-header">
+                            <h3>Ответ</h3>
+                            <div class="response-meta">
+                                Модель: <span id="model">-</span>
+                            </div>
+                        </div>
+                        <div class="response-text" id="responseText"></div>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Входящих токенов</div>
+                                <div class="stat-value" id="inputTokens">-</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Исходящих токенов</div>
+                                <div class="stat-value" id="outputTokens">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function submitTask() {
+            const task = document.getElementById('task').value;
+            const system_prompt = document.getElementById('system_prompt').value;
+
+            if (!task.trim()) {
+                showError('Пожалуйста, введите задачу');
+                return;
+            }
+
+            await sendRequest('/task', { task, system_prompt, max_tokens: 1024 });
+        }
+
+        async function submitRandomTask() {
+            await sendRequest('/task/send', {}, true);
+        }
+
+        async function sendRequest(endpoint, payload, isRandom = false) {
+            clearResults();
+            showLoading();
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: isRandom ? JSON.stringify({}) : JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                hideLoading();
+                displayResponse(data);
+
+                // Автоматически показываем stream после успешного запроса
+                setTimeout(async () => {
+                    await displayStream();
+                }, 500);
+
+            } catch (error) {
+                hideLoading();
+                showError(`Ошибка: ${error.message}`);
+            }
+        }
+
+        function displayResponse(data) {
+            document.getElementById('response-section').style.display = 'block';
+            document.getElementById('model').textContent = data.model;
+            document.getElementById('responseText').textContent = data.output_text;
+            document.getElementById('inputTokens').textContent = data.input_tokens || '-';
+            document.getElementById('outputTokens').textContent = data.output_tokens || '-';
+
+            document.getElementById('results').classList.add('active');
+        }
+
+        async function displayStream() {
+            document.getElementById('stream-section').style.display = 'block';
+            const streamContainer = document.getElementById('streamContainer');
+            streamContainer.innerHTML = '';
+
+            try {
+                const response = await fetch('/stream');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6).trim();
+                            if (data) {
+                                const event = document.createElement('div');
+                                event.className = 'stream-event';
+                                event.textContent = `✓ ${data}`;
+                                streamContainer.appendChild(event);
+                                streamContainer.scrollTop = streamContainer.scrollHeight;
+                            }
+                        } else if (line.startsWith('event: done')) {
+                            const doneEvent = document.createElement('div');
+                            doneEvent.className = 'stream-event done';
+                            doneEvent.textContent = '✓ Поток завершен';
+                            streamContainer.appendChild(doneEvent);
+                        }
+                    }
+                }
+            } catch (error) {
+                const errorEvent = document.createElement('div');
+                errorEvent.className = 'stream-event error';
+                errorEvent.textContent = `✗ Ошибка: ${error.message}`;
+                streamContainer.appendChild(errorEvent);
+            }
+        }
+
+        async function viewStream() {
+            clearResults();
+            document.getElementById('stream-section').style.display = 'block';
+            document.getElementById('results').classList.add('active');
+            await displayStream();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('results').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('error-container').innerHTML = '';
+            document.getElementById('streamContainer').innerHTML = '';
+            document.getElementById('stream-section').style.display = 'none';
+            document.getElementById('response-section').style.display = 'none';
+            hideLoading();
+        }
+
+        // Обработка Enter в textarea
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('task').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    submitTask();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
